@@ -5,104 +5,86 @@ Servo servo01; // Base rotation
 Servo servo02; // Shoulder
 Servo servo03; // Elbow
 
-
 // Define pin numbers
 #define BASE_PIN 5
 #define SHOULDER_PIN 6
 #define ELBOW_PIN 7
 
-
 // Current positions of the servos
-int servo01Pos = 180; // Initial position for servo 01
-int servo02Pos = 90; // Initial position for servo 02
-int servo03Pos = 90; // Initial position for servo 03
-int pos = 90;
+int servo01Pos = 180; // Initial position for servo 01 (base)
+int servo02Pos = 100; // Initial position for servo 02 (shoulder)
+int servo03Pos = 35;  // Initial position for servo 03 (elbow)
+
+//// Define positions for movements
+//int homePosition[3] = {180, 100, 35}; // Home position
+//int pickPosition[3] = {90, 45, 30};   // Position to pick the apple
+//int dropPosition[3] = {90, 90, 30};   // Position to drop the apple
 
 void setup() {
-  // Attach the servos to the appropriate pins
-  servo01.attach(BASE_PIN);
-  servo02.attach(SHOULDER_PIN);
-  servo03.attach(ELBOW_PIN);
-
-
-//  // Set initial positions
-//  servo01.write(servo01Pos);
-//  servo02.write(servo02Pos);
-//  servo03.write(servo03Pos);
+  servo01.attach(5);
+  servo02.attach(6);
+  servo03.attach(7);
   
   
-  delay(1000); // Allow servos to reach initial position
+  // Set initial positions
+  servo01Pos = 90;  // Base
+  servo01.write(servo01Pos);
+  servo02Pos = 150; // Shoulder
+  servo02.write(servo02Pos);
+  servo03Pos = 35;  // Elbow
+  servo03.write(servo03Pos);
+
 }
+
+
 void loop() {
-  // Move shoulder from 90 degrees to 120 degrees
-  for (float pos = 0; pos <= 120; pos += 0.5) { // goes from 90 degrees to 120 degrees
-    servo02.write((int)pos);              // tell servo to go to position in variable 'pos'
-    delay(30);                            // waits 30ms for the servo to reach the position
-  }
-
-  // Move shoulder from 120 degrees back to 90 degrees
-  for (float pos = 0; pos >= 90; pos -= 0.5) { // goes from 120 degrees back to 90 degrees
-    servo02.write((int)pos);              // tell servo to go to position in variable 'pos'
-    delay(30);                            // waits 30ms for the servo to reach the position
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n'); // Read the incoming command
+    processCommand(command); // Process the command
   }
 }
 
+void processCommand(String command) {
+  // Split the command into parts
+  int separatorIndex = command.indexOf(',');
+  if (separatorIndex == -1) {
+    Serial.println("Invalid command format. Use: servoID,position");
+    return;
+  }
 
-//void loop() {
-  // Example movements
- 
-//  moveShoulder(0); // Move shoulder to 150 degrees
-//  delay(1000);
-//  delay(1000);
+  String servoID = command.substring(0, separatorIndex);
+  int position = command.substring(separatorIndex + 1).toInt(); // Convert to integer
 
-//
-// moveBase(0); // Move base to 0 degrees
-//  delay(1000);
-//  moveBase(180); // Move base to 180 degrees
-//  delay(1000);
-//
-//  
-//  moveElbow(150); // Move elbow to 90 degrees
-//  delay(1000);
-//  delay(1000);
-//  
-  
+  // Check if the position is within the valid range
+  if (position < 0 || position > 180) {
+    Serial.println("Invalid position. Please send a value between 0 and 180.");
+    return;
+  }
 
-  
-//  moveShoulder(0); // Move shoulder to 90 degrees
-//  delay(1000);
-//  delay(1000);
-  
-  
- 
-  
- 
+  // Move the specified servo only if the command is valid
+  if (servoID == "base") {
+    servo01.write(position);
+    servo01Pos = position; // Update current position
+    Serial.print("Base moved to: ");
+    Serial.println(position);
+  } else if (servoID == "shoulder") {
+    servo02.write(position);
+    servo02Pos = position; // Update current position
+    Serial.print("Shoulder moved to: ");
+    Serial.println(position);
+  } else if (servoID == "elbow") {
+    servo03.write(position);
+    servo03Pos = position; // Update current position
+    Serial.print("Elbow moved to: ");
+    Serial.println(position);
+  } else {
+    Serial.println("Invalid servo ID. Use 'base', 'shoulder', or 'elbow'.");
+  }
+}
 
-//   
-//  moveElbow(0); // Move elbow to 30 degrees
-//  delay(1000);
-//  delay(1000);
-//  
-  
- 
-  
-//}
-
-//void moveBase(int position) {
-//  servo01Pos = position;
-//  servo01.write(servo01Pos);
-//  delay(2000 ); // Delay for smooth movement
-//}
-
-//void moveShoulder(int position) {
-//  servo02Pos = position;
-//  servo02.write(servo02Pos);
-//  delay(1000);
-//}
-
-//void moveElbow(int position) {
-//  servo03Pos = position;
-//  servo03.write(servo03Pos);
-//  delay(2000);
-//}
-//
+void moveToPosition(int positions[3]) {
+  servo01.write(positions[0]);
+  servo02.write(positions[1]);
+  servo03.write(positions[2]);
+  delay(1000); // Allow time for the servos to reach the position
+}
